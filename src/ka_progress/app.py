@@ -19,6 +19,7 @@ MATH_GRADE_SLUGS = [
     "/math/cc-eighth-grade-math",
 ]
 
+
 @dataclasses.dataclass
 class UnitStatus:
     course: str
@@ -35,9 +36,9 @@ class UnitStatus:
     @property
     def is_done(self) -> bool:
         return (
-            self.unread_articles == 0 and
-            self.unmastered_exercises == 0 and
-            self.unwatched_videos == 0
+            self.unread_articles == 0
+            and self.unmastered_exercises == 0
+            and self.unwatched_videos == 0
         )
 
 
@@ -45,10 +46,22 @@ async def login_and_capture_context():
     pw = await async_playwright().start()
     browser = await pw.firefox.launch(headless=True)
     context = await browser.new_context()
-    await context.add_cookies([
-        {"name": "OptanonAlertBoxClosed", "value": "1", "domain": ".khanacademy.org", "path": "/"},
-        {"name": "OptanonConsent", "value": "isIABGlobal=false&datestamp=2025-01-01T00:00:00.000Z", "domain": ".khanacademy.org", "path": "/"},
-    ])
+    await context.add_cookies(
+        [
+            {
+                "name": "OptanonAlertBoxClosed",
+                "value": "1",
+                "domain": ".khanacademy.org",
+                "path": "/",
+            },
+            {
+                "name": "OptanonConsent",
+                "value": "isIABGlobal=false&datestamp=2025-01-01T00:00:00.000Z",
+                "domain": ".khanacademy.org",
+                "path": "/",
+            },
+        ]
+    )
     page = await context.new_page()
 
     identifier = input("Khan Academy email or username: ").strip()
@@ -73,7 +86,9 @@ async def login_and_capture_context():
 
 
 async def traverse_course(page, course_slug: str):
-    await page.goto(f"https://www.khanacademy.org{course_slug}", wait_until="networkidle")
+    await page.goto(
+        f"https://www.khanacademy.org{course_slug}", wait_until="networkidle"
+    )
     title = await page.locator('h1[data-testid="course-unit-title"]').inner_text()
     if not title:
         console.print(f"[red]Course title not found for slug: {course_slug}[/]")
@@ -82,7 +97,9 @@ async def traverse_course(page, course_slug: str):
     console.print(f"[bold]Fetching progress for course: {title}[/]")
 
     unit_selector = 'a[data-testid="unit-header"]'
-    unit_urls = await page.locator(unit_selector).evaluate_all("els => els.map(e => e.href)")
+    unit_urls = await page.locator(unit_selector).evaluate_all(
+        "els => els.map(e => e.href)"
+    )
     if not unit_urls:
         console.print(f"[red]No units found for course: {title}[/]")
         return
@@ -123,7 +140,10 @@ async def fetch_unit_progress(page, course_title: str, url: str):
 
     def on_response(response):
         # We only care about KA graphql responses for topic progress
-        if "/api/internal/graphql/getUserInfoForTopicProgressMastery" in response.request.url:
+        if (
+            "/api/internal/graphql/getUserInfoForTopicProgressMastery"
+            in response.request.url
+        ):
             captured_responses.append(response)
 
     page.on("response", on_response)
@@ -159,7 +179,9 @@ async def fetch_unit_progress(page, course_title: str, url: str):
 
 def update_unit_status_from_payload(status, payload):
     # Extract progress data from the payload
-    item_progress = payload.get("data", {}).get("user", {}).get("contentItemProgresses", [])
+    item_progress = (
+        payload.get("data", {}).get("user", {}).get("contentItemProgresses", [])
+    )
     for item in item_progress:
         is_completed = item.get("completionStatus", "") == "COMPLETE"
         item_type = item.get("content", {}).get("__typename", "")
