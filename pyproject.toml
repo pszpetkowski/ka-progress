@@ -15,3 +15,6 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = ["ruff>=0.12.9"]
+
+[project.scripts]
+ka-progress = "ka_progress.cli:main"
