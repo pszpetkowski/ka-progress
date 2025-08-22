@@ -137,6 +137,7 @@ async def traverse_course(page, course_slug: str):
 
 async def fetch_unit_progress(page, course_title: str, url: str):
     captured_responses = []
+    title = "Unknown unit"
 
     def on_response(response):
         # We only care about KA graphql responses for topic progress
