@@ -1,6 +1,7 @@
 import asyncio
 import dataclasses
 import getpass
+from typing import Any
 
 from rich.console import Console
 from rich.table import Table
@@ -104,7 +105,7 @@ async def traverse_course(page, course_slug: str):
         console.print(f"[red]No units found for course: {title}[/]")
         return
 
-    statuses = []
+    statuses: list[UnitStatus] = []
     for unit_url in unit_urls:
         status = await fetch_unit_progress(page, title, unit_url)
         if status:
@@ -135,7 +136,7 @@ async def traverse_course(page, course_slug: str):
     console.print(table)
 
 
-async def fetch_unit_progress(page, course_title: str, url: str):
+async def fetch_unit_progress(page, course_title: str, url: str) -> UnitStatus | None:
     captured_responses = []
     title = "Unknown unit"
 
@@ -181,7 +182,9 @@ async def fetch_unit_progress(page, course_title: str, url: str):
     return status
 
 
-def update_unit_status_from_payload(status, payload):
+def update_unit_status_from_payload(
+    status: UnitStatus, payload: dict[str, Any]
+) -> None:
     # Extract progress data from the payload
     item_progress = (
         payload.get("data", {}).get("user", {}).get("contentItemProgresses", [])
