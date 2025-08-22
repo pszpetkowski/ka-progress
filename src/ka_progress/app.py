@@ -155,14 +155,17 @@ async def fetch_unit_progress(page, course_title: str, url: str):
         console.print(f"-----> Fetching progress for unit: {title}")
     except PWTimeout:
         console.print(f"[red]Timeout while fetching {url}[/]")
+        return None
     except Exception as e:
         console.print(f"[red]Error fetching {url}: {e}[/]")
-
-    page.remove_listener("response", on_response)
+        return None
+    finally:
+        # Ensure we always detach the listener
+        page.remove_listener("response", on_response)
 
     if not captured_responses:
         console.print(f"[red]No progress data found for unit: {title}[/]")
-        return
+        return None
 
     status = UnitStatus(course=course_title, unit_title=title)
 
