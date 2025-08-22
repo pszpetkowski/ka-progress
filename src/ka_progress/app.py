@@ -42,9 +42,9 @@ class UnitStatus:
         )
 
 
-async def login_and_capture_context():
+async def login_and_capture_context(headless: bool = True):
     pw = await async_playwright().start()
-    browser = await pw.firefox.launch(headless=True)
+    browser = await pw.firefox.launch(headless=headless)
     context = await browser.new_context()
     await context.add_cookies(
         [
@@ -82,7 +82,7 @@ async def login_and_capture_context():
     await page.click(submit_selector)
     await page.wait_for_load_state("networkidle")
 
-    return context, page
+    return pw, browser, context, page
 
 
 async def traverse_course(page, course_slug: str):
@@ -205,15 +205,18 @@ def update_unit_status_from_payload(status, payload):
                 console.print(f"[yellow]Unknown item type: {item_type}[/]")
 
 
-async def main():
-    context, page = await login_and_capture_context()
-    for slug in MATH_GRADE_SLUGS:
+async def main(slugs: list[str] | None = None, headless: bool = True):
+    pw, browser, context, page = await login_and_capture_context(headless=headless)
+    use_slugs = slugs if slugs else MATH_GRADE_SLUGS
+    for slug in use_slugs:
         console.print(f"\n[bold]Traversing course slug: {slug}[/]")
         try:
             await traverse_course(page, slug)
         except Exception as e:
             console.print(f"[red]Error traversing course slug {slug}: {e}[/]")
     await context.close()
+    await browser.close()
+    await pw.stop()
 
 
 if __name__ == "__main__":
