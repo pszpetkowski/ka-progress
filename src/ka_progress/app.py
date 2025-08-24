@@ -5,14 +5,7 @@ from typing import Any
 
 from rich.console import Console
 from rich.table import Table
-from playwright.async_api import (
-    async_playwright,
-    TimeoutError as PWTimeout,
-    Playwright,
-    Browser,
-    BrowserContext,
-    Page,
-)
+import playwright.async_api as pw_api
 
 console = Console(highlight=False)
 
@@ -55,13 +48,13 @@ class KAProgress:
 
     def __init__(self, headless: bool = True) -> None:
         self.headless: bool = headless
-        self._pw: Playwright | None = None
-        self._browser: Browser | None = None
-        self._context: BrowserContext | None = None
-        self._page: Page | None = None
+        self._pw: pw_api.Playwright | None = None
+        self._browser: pw_api.Browser | None = None
+        self._context: pw_api.BrowserContext | None = None
+        self._page: pw_api.Page | None = None
 
     async def start(self) -> None:
-        self._pw = await async_playwright().start()
+        self._pw = await pw_api.async_playwright().start()
         self._browser = await self._pw.firefox.launch(headless=self.headless)
         self._context = await self._browser.new_context()
         await self.context.add_cookies(
@@ -83,25 +76,25 @@ class KAProgress:
         self._page = await self.context.new_page()
 
     @property
-    def pw(self) -> Playwright:
+    def pw(self) -> pw_api.Playwright:
         if self._pw is None:
             raise RuntimeError("KAProgress.start() must be called first (Playwright)")
         return self._pw
 
     @property
-    def browser(self) -> Browser:
+    def browser(self) -> pw_api.Browser:
         if self._browser is None:
             raise RuntimeError("KAProgress.start() must be called first (Browser)")
         return self._browser
 
     @property
-    def context(self) -> BrowserContext:
+    def context(self) -> pw_api.BrowserContext:
         if self._context is None:
             raise RuntimeError("KAProgress.start() must be called first (Context)")
         return self._context
 
     @property
-    def page(self) -> Page:
+    def page(self) -> pw_api.Page:
         if self._page is None:
             raise RuntimeError("KAProgress.start() must be called first (Page)")
         return self._page
@@ -217,7 +210,7 @@ class KAProgress:
                 'h1[data-testid="course-unit-title"]'
             ).inner_text()
             console.print(f"-----> Fetching progress for unit: {title}")
-        except PWTimeout:
+        except pw_api.TimeoutError:
             console.print(f"[red]Timeout while fetching {url}[/]")
             return None
         except Exception as e:
